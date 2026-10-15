@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draw the original profile header. No network services or external imagery."""
+"""Render an original looping light sculpture and a minimal wordmark."""
 
 from __future__ import annotations
 
@@ -11,117 +11,102 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 
-WIDTH, HEIGHT = 1600, 640
-FRAMES, DURATION = 96, 50
-BG = (9, 15, 26)
-INK = (235, 243, 248)
-MUTED = (140, 161, 181)
-TEAL = (102, 227, 196)
-LILAC = (169, 164, 245)
-FONT_ROOT = Path('/usr/share/fonts/truetype/dejavu')
+WIDTH, HEIGHT = 1600, 760
+FRAMES, DURATION = 120, 40
+BG = (7, 10, 17)
+FONT = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
 
 
-def font(size: int, weight: str = 'regular') -> ImageFont.FreeTypeFont:
-    name = {'regular': 'DejaVuSans.ttf', 'bold': 'DejaVuSans-Bold.ttf',
-            'mono': 'DejaVuSansMono.ttf'}[weight]
-    return ImageFont.truetype(str(FONT_ROOT / name), size)
+def mix(a, b, amount):
+    return tuple(round(x + (y-x)*amount) for x, y in zip(a, b))
 
 
-def spaced(draw: ImageDraw.ImageDraw, xy, text, face, fill, spacing=3):
-    x, y = xy
-    for char in text:
-        draw.text((x, y), char, font=face, fill=fill)
-        x += draw.textlength(char, font=face) + spacing
+def colors(position):
+    colors = [(112, 231, 234), (126, 170, 255), (181, 148, 247),
+              (137, 205, 248), (112, 231, 234)]
+    position = position % 1 * 4
+    index = int(position)
+    return mix(colors[index], colors[index + 1], position - index)
 
 
-def base_image() -> Image.Image:
-    y, x = np.mgrid[0:HEIGHT, 0:WIDTH]
-    halo = np.exp(-(((x - 1200) / 350) ** 2 + ((y - 300) / 300) ** 2))
+def base_image():
+    yy, xx = np.mgrid[0:HEIGHT, 0:WIDTH]
+    halo = np.exp(-(((xx-800)/360)**2 + ((yy-300)/260)**2))
     pixels = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
-    for i, level in enumerate(BG):
-        pixels[:, :, i] = np.clip(level + halo * [1, 8, 13][i], 0, 255)
+    for i, component in enumerate(BG):
+        pixels[:, :, i] = component + (halo * [3, 4, 11][i]).astype('uint8')
     image = Image.fromarray(pixels)
     draw = ImageDraw.Draw(image)
-    # Quiet plotting grid behind the scientific illustration.
-    for xx in range(840, WIDTH - 40, 56):
-        draw.line((xx, 90, xx, 550), fill=(19, 33, 46), width=1)
-    for yy in range(102, 550, 56):
-        draw.line((820, yy, WIDTH - 50, yy), fill=(19, 33, 46), width=1)
-    draw.rounded_rectangle((1, 1, WIDTH - 2, HEIGHT - 2), radius=28,
-                           outline=(38, 52, 69), width=2)
-    spaced(draw, (76, 54), 'MATTHEW JOHN FREEMAN', font(19, 'mono'), MUTED, 2)
-    draw.text((76, 90), '@nvxraM', font=font(22, 'mono'), fill=TEAL)
-    # A strong, restrained typographic lockup.
-    draw.text((70, 165), 'Curiosity,', font=font(105, 'bold'), fill=INK,
-              stroke_width=0)
-    draw.text((70, 282), 'in code.', font=font(105, 'bold'), fill=TEAL)
-    draw.text((78, 432), 'Exploring genomes. Connecting patterns.',
-              font=font(27), fill=(165, 184, 201))
-    draw.line((78, 535, 1520, 535), fill=(37, 53, 70), width=1)
-    spaced(draw, (78, 575), 'GENOMICS  /  CODE  /  DISCOVERY',
-           font(19, 'mono'), MUTED, 1)
-    draw.text((1250, 575), 'STAY CURIOUS', font=font(19, 'mono'), fill=TEAL)
+    rng = np.random.default_rng(127)
+    for _ in range(75):
+        x, y = rng.integers(100, 1500), rng.integers(55, 515)
+        if abs(x-800) > 345 or abs(y-280) > 205:
+            color = (28, 38, 55) if x % 3 else (48, 61, 81)
+            draw.ellipse((int(x), int(y), int(x+1), int(y+1)), fill=color)
+    face = ImageFont.truetype(FONT, 120)
+    draw.text((800, 545), 'nvxraM', font=face, fill=(235, 241, 250), anchor='mt')
     return image
 
 
-def strand_point(t: float, phase: float, opposite=False):
-    angle = t * math.pi * 4 + phase + (math.pi if opposite else 0)
-    # Tilt the molecular axis, while rotation changes depth and rung perspective.
-    axis_x = 1180 + (t - .5) * 150
-    xx = axis_x + math.cos(angle) * 149
-    yy = 110 + t * 374 + math.sin(angle) * 20
-    return xx, yy, math.sin(angle)
+T = np.linspace(0, math.tau, 721)
 
 
-def render(base: Image.Image, frame: int) -> Image.Image:
-    phase = frame * math.tau / FRAMES
-    image = base.copy()
-    draw = ImageDraw.Draw(image)
-    glow = Image.new('RGB', image.size)
+def points(phase, offset):
+    radius = 177 + 62 * np.cos(3*T) + offset
+    x = radius * np.cos(2*T)
+    y = radius * np.sin(2*T)
+    z = 91 * np.sin(3*T)
+    yaw = phase
+    xx = x * math.cos(yaw) + z * math.sin(yaw)
+    zz = -x * math.sin(yaw) + z * math.cos(yaw)
+    pitch = .72 + .18 * math.sin(phase)
+    yy = y * math.cos(pitch) - zz * math.sin(pitch)
+    depth = y * math.sin(pitch) + zz * math.cos(pitch)
+    lean = .2 * math.sin(phase)
+    xxx = xx * math.cos(lean) - yy * math.sin(lean)
+    yyy = xx * math.sin(lean) + yy * math.cos(lean)
+    perspective = 850 / (850-depth)
+    return np.column_stack((800+xxx*perspective, 285+yyy*perspective,
+                            depth, perspective))
+
+
+def render(base, index):
+    phase = math.tau * index / FRAMES
+    # Render the fine geometry at twice the output size for clean moving edges.
+    scale = 2
+    fine = Image.new('RGB', (WIDTH*scale, HEIGHT*scale))
+    draw = ImageDraw.Draw(fine)
+    glow = Image.new('RGB', (WIDTH, HEIGHT))
     gd = ImageDraw.Draw(glow)
-    # Small, stationary orbital references make the movement easy to follow.
-    draw.ellipse((967, 84, 1438, 504), outline=(31, 53, 67), width=1)
-    draw.line((954, 296, 977, 296), fill=(65, 92, 106), width=2)
-    draw.line((1424, 296, 1447, 296), fill=(65, 92, 106), width=2)
-    draw.text((982, 62), 'A / T / C / G', font=font(17, 'mono'), fill=MUTED)
-    # Sort molecular segments by depth so the near strand occludes its rungs.
-    parts = []
-    for k in range(27):
-        t = k / 26
-        a = strand_point(t, phase)
-        b = strand_point(t, phase, True)
-        parts.append((-0.1, 'rung', a, b))
-    for side in (False, True):
-        for k in range(240):
-            a = strand_point(k / 240, phase, side)
-            b = strand_point((k + 1) / 240, phase, side)
-            parts.append(((a[2] + b[2]) / 2, 'strand', a, b, side))
-    for part in sorted(parts, key=lambda p: p[0]):
-        _, kind, a, b, *side = part
-        if kind == 'rung':
-            mid = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
-            draw.line((a[0], a[1], *mid), fill=(63, 127, 125), width=3)
-            draw.line((*mid, b[0], b[1]), fill=(97, 95, 150), width=3)
-        else:
-            color = LILAC if side[0] else TEAL
-            brightness = .44 + (a[2] + 1) * .28
-            color = tuple(round(v * brightness) for v in color)
-            coords = (a[0], a[1], b[0], b[1])
-            draw.line(coords, fill=color, width=6)
-            gd.line(coords, fill=tuple(v // 3 for v in color), width=9)
-    # Add a very light bloom, preserving crisp center lines and readable type.
-    image = Image.fromarray(np.clip(np.asarray(image, dtype=np.uint16) +
-                            np.asarray(glow.filter(ImageFilter.GaussianBlur(12)),
-                                       dtype=np.uint16), 0, 255).astype('uint8'))
-    draw = ImageDraw.Draw(image)
-    for side in (False, True):
-        for k in range(27):
-            x, y, z = strand_point(k / 26, phase, side)
-            r = 3 + (z + 1) * 1.3
-            color = LILAC if side else TEAL
-            brightness = .6 + (z + 1) * .2
-            fill = tuple(round(v * brightness) for v in color)
-            draw.ellipse((x-r, y-r, x+r, y+r), fill=fill)
+    segments = []
+    for filament, offset in enumerate([-8, -4, 0, 4, 8]):
+        curve = points(phase, offset)
+        for k in range(len(T)-1):
+            a, b = curve[k], curve[k+1]
+            color = colors(k/(len(T)-1) + filament*.015)
+            level = .42 + .72 * (a[2]+270)/540
+            color = tuple(min(255, round(c*level)) for c in color)
+            segments.append((a[2], a, b, color, filament))
+    for depth, a, b, color, filament in sorted(segments, key=lambda x:x[0]):
+        line = (a[0], a[1], b[0], b[1])
+        draw.line(tuple(value*scale for value in line), fill=color,
+                  width=max(2, round((2.2 if filament == 2 else 1.2)*a[3]*scale)))
+        gd.line(line, fill=tuple(c//3 for c in color), width=9)
+    curve = points(phase, 0)
+    for particle in range(7):
+        head = (index/FRAMES + particle/7) % 1
+        for trail in range(17):
+            t = (head-trail*.0017) % 1
+            x, y, z, perspective = curve[int(t*(len(T)-1))]
+            r = max(1.0, (3.8-trail*.15)*perspective)
+            color = mix(BG, (214, 248, 255), (1-trail/18)*(.65+(z+270)/1600))
+            draw.ellipse(((x-r)*scale,(y-r)*scale,(x+r)*scale,(y+r)*scale), fill=color)
+            gd.ellipse((x-r*2,y-r*2,x+r*2,y+r*2), fill=tuple(c//2 for c in color))
+    bloom = np.asarray(glow.filter(ImageFilter.GaussianBlur(12)), dtype=np.uint16)
+    core = np.asarray(fine.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS),
+                      dtype=np.uint16)
+    image = Image.fromarray(np.clip(np.asarray(base, dtype=np.uint16)+core+bloom,
+                                    0,255).astype('uint8'))
     return image
 
 
@@ -132,19 +117,17 @@ def main():
     args.output_dir.mkdir(parents=True, exist_ok=True)
     base = base_image()
     frames = [render(base, i) for i in range(FRAMES)]
-    frames[0].save(args.output_dir / 'hero.png', optimize=True)
-    # One palette across the whole loop prevents color flicker between frames.
-    contact = Image.new('RGB', (400 * 6, 160))
-    for i in range(6):
-        contact.paste(frames[i * (FRAMES // 6)].resize((400, 160)), (i * 400, 0))
-    palette = contact.quantize(colors=256, method=Image.Quantize.MEDIANCUT)
-    encoded = [f.quantize(palette=palette, dither=Image.Dither.NONE) for f in frames]
-    encoded[0].save(args.output_dir / 'hero.gif', save_all=True,
-                    append_images=encoded[1:], duration=DURATION, loop=0,
-                    optimize=True, disposal=1)
-    for suffix in ('png', 'gif'):
-        target = args.output_dir / f'hero.{suffix}'
-        print(f'{target}: {target.stat().st_size:,} bytes')
+    frames[0].save(args.output_dir/'hero.png', optimize=True)
+    swatches = Image.new('RGB',(400*6,190))
+    for k in range(6):
+        swatches.paste(frames[k*(FRAMES//6)].resize((400,190)),(400*k,0))
+    palette = swatches.quantize(colors=256,method=Image.Quantize.MEDIANCUT)
+    indexed = [frame.quantize(palette=palette,dither=Image.Dither.NONE) for frame in frames]
+    indexed[0].save(args.output_dir/'hero.gif',save_all=True,append_images=indexed[1:],
+                    duration=DURATION,loop=0,disposal=1,optimize=True)
+    for name in ['hero.png','hero.gif']:
+        path=args.output_dir/name
+        print(f'{path}: {path.stat().st_size:,} bytes')
 
 
 if __name__ == '__main__':

@@ -56,11 +56,11 @@ def check_markdown(path):
                 f'{path.name}: link escapes repository: {target}')
         require(destination.is_file(), f'{path.name}: broken local link: {target}')
     if path.name == 'PROFILE_STATIC.md':
-        require(len(parser.images) == 4, 'Static profile must contain all four posters')
+        require(len(parser.images) == 2, 'Static profile must contain both posters')
         require(all(name.endswith('.png') for name in parser.images),
                 'Static profile contains an animated image')
     if path.name == 'README.md':
-        require(len(parser.images) == 4, 'Profile must contain all four illustrations')
+        require(len(parser.images) == 2, 'Profile must contain both illustrations')
         require('PROFILE_STATIC.md' in source, 'No visible static-profile link')
     print(f'OK links and image alt text: {path.relative_to(ROOT)}')
 
@@ -96,8 +96,7 @@ def check_media(name, height):
 def main():
     for path in sorted(ROOT.rglob('*.md')):
         check_markdown(path)
-    for name, height in [('hero', 640), ('workflow', 560),
-                         ('contact-map', 620), ('terminal', 420)]:
+    for name, height in [('hero', 760), ('ribbon', 200)]:
         check_media(name, height)
     if ERRORS:
         raise SystemExit('\n'.join(f'FAIL: {error}' for error in ERRORS))
