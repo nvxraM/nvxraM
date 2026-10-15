@@ -101,7 +101,7 @@ def check_media(name, height):
 def main():
     for path in sorted(ROOT.rglob('*.md')):
         check_markdown(path)
-    for name, height in [('hero-v2', 900), ('field-v2', 260)]:
+    for name, height in [('hero-v3', 900), ('field-v3', 260)]:
         check_media(name, height)
     if ERRORS:
         raise SystemExit('\n'.join(f'FAIL: {error}' for error in ERRORS))
