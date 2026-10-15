@@ -15,5 +15,5 @@
 </p>
 
 <p align="center">
-  <sub><a href="https://github.com/nvxraM?tab=repositories">repositories</a> &nbsp; · &nbsp; <a href="docs/PROFILE_STATIC.md">view without animation</a></sub>
+  <sub> &nbsp; <a href="docs/PROFILE_STATIC.md">view without animation</a></sub>
 </p>
