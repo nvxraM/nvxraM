@@ -26,6 +26,7 @@ class ProfileHTML(HTMLParser):
         self.path = path
         self.targets = []
         self.images = []
+        self.still_sources = []
 
     def handle_starttag(self, tag, attrs):
         values = dict(attrs)
@@ -40,6 +41,8 @@ class ProfileHTML(HTMLParser):
             require(bool(values.get('alt', '').strip()),
                     f'{self.path.name}: image has no alt text')
             self.images.append(values.get('src', ''))
+        if tag == 'source' and values.get('media') == '(prefers-reduced-motion: reduce)':
+            self.still_sources.append(values.get('srcset', ''))
 
 
 def check_markdown(path):
@@ -61,7 +64,9 @@ def check_markdown(path):
                 'Static profile contains an animated image')
     if path.name == 'README.md':
         require(len(parser.images) == 2, 'Profile must contain both illustrations')
-        require('PROFILE_STATIC.md' in source, 'No visible static-profile link')
+        require(len(parser.still_sources) == 2 and
+                all(name.endswith('.png') for name in parser.still_sources),
+                'Both animations need static reduced-motion sources')
     print(f'OK links and image alt text: {path.relative_to(ROOT)}')
 
 
@@ -96,7 +101,7 @@ def check_media(name, height):
 def main():
     for path in sorted(ROOT.rglob('*.md')):
         check_markdown(path)
-    for name, height in [('hero', 760), ('ribbon', 200)]:
+    for name, height in [('hero-v2', 900), ('field-v2', 260)]:
         check_media(name, height)
     if ERRORS:
         raise SystemExit('\n'.join(f'FAIL: {error}' for error in ERRORS))
