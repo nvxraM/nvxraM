@@ -13,7 +13,3 @@
     <img src="assets/ribbon.gif" width="100%" alt="Soft cyan and violet light ribbons flow in a seamless wave." />
   </picture>
 </p>
-
-<p align="center">
-  <sub> &nbsp; <a href="docs/PROFILE_STATIC.md">view without animation</a></sub>
-</p>
