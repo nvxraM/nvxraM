@@ -27,6 +27,7 @@ class ProfileHTML(HTMLParser):
         self.targets = []
         self.images = []
         self.still_sources = []
+        self.webp_sources = []
 
     def handle_starttag(self, tag, attrs):
         values = dict(attrs)
@@ -43,6 +44,8 @@ class ProfileHTML(HTMLParser):
             self.images.append(values.get('src', ''))
         if tag == 'source' and values.get('media') == '(prefers-reduced-motion: reduce)':
             self.still_sources.append(values.get('srcset', ''))
+        if tag == 'source' and values.get('type') == 'image/webp':
+            self.webp_sources.append(values.get('srcset', ''))
 
 
 def check_markdown(path):
@@ -67,6 +70,11 @@ def check_markdown(path):
         require(len(parser.still_sources) == 2 and
                 all(name.endswith('.png') for name in parser.still_sources),
                 'Both animations need static reduced-motion sources')
+        require(len(parser.webp_sources) == 2 and
+                all(name.endswith('.webp') for name in parser.webp_sources),
+                'Both animations need full-color WebP sources')
+        require(all(name.endswith('.gif') for name in parser.images),
+                'Both animations need GIF fallbacks')
     print(f'OK links and image alt text: {path.relative_to(ROOT)}')
 
 
@@ -75,13 +83,18 @@ def check_media(name, height):
         require(poster.size == (1600, height), f'{name}: unexpected poster dimensions')
         require(getattr(poster, 'n_frames', 1) == 1, f'{name}: poster is animated')
         poster.load()
-    path = ROOT / 'assets' / f'{name}.gif'
-    require(path.stat().st_size < 10_000_000, f'{name}: GIF exceeds 10 MB')
+    for extension in ['gif', 'webp']:
+        check_animation(ROOT / 'assets' / f'{name}.{extension}', height)
+
+
+def check_animation(path, height):
+    name = path.name
+    require(path.stat().st_size < 10_000_000, f'{name}: animation exceeds 10 MB')
     with Image.open(path) as animation:
         count = getattr(animation, 'n_frames', 1)
-        require(count > 1, f'{name}: GIF has no animation')
-        require(animation.size == (1600, height), f'{name}: GIF dimensions differ')
-        require(animation.info.get('loop') == 0, f'{name}: GIF does not loop')
+        require(count > 1, f'{name}: image has no animation')
+        require(animation.size == (1600, height), f'{name}: animation dimensions differ')
+        require(animation.info.get('loop') == 0, f'{name}: animation does not loop')
         first = animation.convert('RGB')
         total = 0
         changed = False
@@ -101,7 +114,7 @@ def check_media(name, height):
 def main():
     for path in sorted(ROOT.rglob('*.md')):
         check_markdown(path)
-    for name, height in [('hero-v3', 900), ('field-v3', 260)]:
+    for name, height in [('hero-v4', 800), ('field-v4', 240)]:
         check_media(name, height)
     if ERRORS:
         raise SystemExit('\n'.join(f'FAIL: {error}' for error in ERRORS))
