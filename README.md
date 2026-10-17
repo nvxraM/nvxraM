@@ -1,19 +1,7 @@
-<h3 align="center">nvxraM</h3>
-
-<p align="center"><sub>curiosity runs deep.</sub></p>
-
 <p align="center">
   <picture>
-    <source media="(prefers-reduced-motion: reduce)" srcset="assets/hero-v5.png" />
-    <source type="image/webp" srcset="assets/hero-v5.webp" />
-    <img src="assets/hero-v5.gif" width="100%" alt="A translucent deep-sea organism with cyan radial filaments, warm inner folds, and trailing tentacles drifts through indigo water, surrounded by softly defocused particles." />
-  </picture>
-</p>
-
-<p align="center">
-  <picture>
-    <source media="(prefers-reduced-motion: reduce)" srcset="assets/field-v5.png" />
-    <source type="image/webp" srcset="assets/field-v5.webp" />
-    <img src="assets/field-v5.gif" width="100%" alt="A close-up field of luminous marine filaments and suspended plankton glows in cyan, peach, and violet against deep indigo water." />
+    <source media="(prefers-reduced-motion: reduce)" srcset="assets/panel-v6.png" />
+    <source type="image/webp" srcset="assets/panel-v6.webp" />
+    <img src="assets/panel-v6.gif" width="100%" alt="nvxraM in weathered stone relief on the seafloor, beside an uncanny luminous jellyfish and living filaments. Directional cyan light reveals translucent inner folds and casts deep shadows across one continuous underwater scene." />
   </picture>
 </p>

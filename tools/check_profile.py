@@ -28,6 +28,12 @@ class ProfileHTML(HTMLParser):
         self.images = []
         self.still_sources = []
         self.webp_sources = []
+        self.alt_text = []
+        self.visible_text = []
+
+    def handle_data(self, data):
+        if data.strip():
+            self.visible_text.append(data.strip())
 
     def handle_starttag(self, tag, attrs):
         values = dict(attrs)
@@ -42,6 +48,7 @@ class ProfileHTML(HTMLParser):
             require(bool(values.get('alt', '').strip()),
                     f'{self.path.name}: image has no alt text')
             self.images.append(values.get('src', ''))
+            self.alt_text.append(values.get('alt', ''))
         if tag == 'source' and values.get('media') == '(prefers-reduced-motion: reduce)':
             self.still_sources.append(values.get('srcset', ''))
         if tag == 'source' and values.get('type') == 'image/webp':
@@ -62,19 +69,23 @@ def check_markdown(path):
                 f'{path.name}: link escapes repository: {target}')
         require(destination.is_file(), f'{path.name}: broken local link: {target}')
     if path.name == 'PROFILE_STATIC.md':
-        require(len(parser.images) == 2, 'Static profile must contain both posters')
+        require(len(parser.images) == 1, 'Static profile must contain one panel')
         require(all(name.endswith('.png') for name in parser.images),
                 'Static profile contains an animated image')
     if path.name == 'README.md':
-        require(len(parser.images) == 2, 'Profile must contain both illustrations')
-        require(len(parser.still_sources) == 2 and
+        require(len(parser.images) == 1, 'Profile must contain one integrated panel')
+        require(len(parser.still_sources) == 1 and
                 all(name.endswith('.png') for name in parser.still_sources),
-                'Both animations need static reduced-motion sources')
-        require(len(parser.webp_sources) == 2 and
+                'The panel needs a static reduced-motion source')
+        require(len(parser.webp_sources) == 1 and
                 all(name.endswith('.webp') for name in parser.webp_sources),
-                'Both animations need full-color WebP sources')
+                'The panel needs a full-color WebP source')
         require(all(name.endswith('.gif') for name in parser.images),
-                'Both animations need GIF fallbacks')
+                'The panel needs a GIF fallback')
+    if path.name in {'README.md', 'PROFILE_STATIC.md'}:
+        require(not parser.visible_text, 'The profile must keep its name inside the panel')
+        require(any('nvxraM' in alt for alt in parser.alt_text),
+                'Image alt text must include the embedded handle nvxraM')
     print(f'OK links and image alt text: {path.relative_to(ROOT)}')
 
 
@@ -114,7 +125,7 @@ def check_animation(path, height):
 def main():
     for path in sorted(ROOT.rglob('*.md')):
         check_markdown(path)
-    for name, height in [('hero-v5', 800), ('field-v5', 220)]:
+    for name, height in [('panel-v6', 900)]:
         check_media(name, height)
     if ERRORS:
         raise SystemExit('\n'.join(f'FAIL: {error}' for error in ERRORS))

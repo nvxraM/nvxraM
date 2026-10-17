@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render Cycles frames, denoise with OIDN, and package the original V5 artwork."""
+"""Render Cycles frames, denoise with OIDN, and package the original V6 artwork."""
 
 from __future__ import annotations
 
@@ -19,13 +19,17 @@ from setup_oidn import VERSION as OIDN_VERSION, ensure_oidn
 
 
 TOOLS = Path(__file__).resolve().parent
+DEFAULT_FONT = Path('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf')
 
 
 def render_specification(scene: Path, count: int, samples: int, kind: str,
-                         pose_count: int | None = None):
+                         pose_count: int | None = None, font: Path = DEFAULT_FONT):
+    if not font.is_file():
+        raise SystemExit(f'Required font is missing: {font}. Install fonts-dejavu-core or pass --font.')
     pose_count = count if pose_count is None else pose_count
-    return {'generator': 'nvxram-v5',
+    return {'generator': 'nvxram-v6',
             'processing_revision': 1, 'oidn_version': OIDN_VERSION,
+            'font_sha256': hashlib.sha256(font.read_bytes()).hexdigest(),
             'scene_sha256': hashlib.sha256(scene.read_bytes()).hexdigest(),
             'frame_count': count, 'pose_count': pose_count,
             'motion': 'eased-pendulum' if pose_count < count else 'full-cycle',
@@ -46,7 +50,7 @@ def prepare_work(work: Path, specification: dict, reuse: bool):
         # --resume would incorrectly accept as frames from the new scene.
         frames = [path for folder in [raw, clean] for path in folder.glob('frame-*.png')]
         if manifest.is_file():
-            if json.loads(manifest.read_text()).get('generator') != 'nvxram-v5':
+            if json.loads(manifest.read_text()).get('generator') != 'nvxram-v6':
                 raise SystemExit('This work directory belongs to another renderer; choose an empty one.')
         elif frames:
             raise SystemExit('Unrecognized frames in the work directory; choose an empty one.')
@@ -154,7 +158,7 @@ def package(clean: Path, output: Path, stem: str, count: int, duration: int,
     sequence = motion_sequence(clean, count, pose_count)
     filters = (f'[0:v]trim=end_frame={count},split[a][b];'
                f'[a]palettegen=max_colors={colors}:reserve_transparent=1:stats_mode=diff[p];'
-               '[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle')
+               '[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle')
     poster_temp = output / f'.{stem}.pending.png'
     gif_temp = output / f'.{stem}.pending.gif'
     try:
@@ -177,31 +181,31 @@ def package(clean: Path, output: Path, stem: str, count: int, duration: int,
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--kind', choices=['hero', 'field'], default='hero')
     parser.add_argument('--output-dir', type=Path, default=Path('assets'))
     parser.add_argument('--work-dir', type=Path)
     parser.add_argument('--frame-count', type=int)
     parser.add_argument('--pose-count', type=int,
                         help='Native poses; defaults to the full native cycle; fewer poses enable cosine easing')
     parser.add_argument('--samples', type=int)
+    parser.add_argument('--font', type=Path, default=DEFAULT_FONT)
     parser.add_argument('--threads', type=int, default=4)
     parser.add_argument('--duration', type=int, default=50)
-    parser.add_argument('--colors', type=int, choices=[96, 128, 192, 256], default=256)
+    parser.add_argument('--colors', type=int, choices=[96, 128, 192, 256], default=96)
     parser.add_argument('--resume', action='store_true')
     parser.add_argument('--package-only', action='store_true')
     args = parser.parse_args()
     count = 60 if args.frame_count is None else args.frame_count
-    samples = (32 if args.kind == 'hero' else 20) if args.samples is None else args.samples
+    samples = 48 if args.samples is None else args.samples
     poses = count if args.pose_count is None else args.pose_count
     if min(count, samples, args.threads, args.duration) < 1:
         raise SystemExit('Frame count, samples, threads, and duration must be positive.')
     if not 1 <= poses <= count:
         raise SystemExit('Pose count must be between one and the output frame count.')
-    scene_path = TOOLS / ('scene_v5.py' if args.kind == 'hero' else 'scene_field_v5.py')
-    work = args.work_dir or Path('/tmp/nvxram-v5') / args.kind
-    specification = render_specification(scene_path, count, samples, args.kind, poses)
+    scene_path = TOOLS / 'scene_v6.py'
+    work = args.work_dir or Path('/tmp/nvxram-v6')
+    specification = render_specification(scene_path, count, samples, 'panel', poses, args.font)
     raw, clean = prepare_work(work, specification, args.resume or args.package_only)
-    size = (1600, 800 if args.kind == 'hero' else 220)
+    size = (1600, 900)
     invalid_raw = [index for index in range(poses)
                    if not complete_png(raw / f'frame-{index:04d}.png', size)]
     if args.package_only:
@@ -222,6 +226,7 @@ def main():
                             '--python-exit-code', '1', '--python', str(scene_path), '--',
                             '--output-dir', str(raw), '--frame-count', str(count),
                             '--frames', selected, '--samples', str(samples),
+                            '--font', str(args.font.resolve()),
                             '--percent', '100', '--threads', str(args.threads)], check=True, env=env)
         for index in range(poses):
             source, target = raw / f'frame-{index:04d}.png', clean / f'frame-{index:04d}.png'
@@ -229,8 +234,8 @@ def main():
                 raise SystemExit(f'Rendered pose is incomplete: {source}')
             if not args.resume or not complete_png(target, size):
                 denoise_png(source, target, binary, args.threads)
-            print(f'V5_DENOISED {args.kind} {index+1}/{poses}', flush=True)
-    package(clean, args.output_dir, f'{args.kind}-v5', count, args.duration, args.colors, poses)
+            print(f'V6_DENOISED {index+1}/{poses}', flush=True)
+    package(clean, args.output_dir, 'panel-v6', count, args.duration, args.colors, poses)
 
 
 if __name__ == '__main__':
