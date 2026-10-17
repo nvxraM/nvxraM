@@ -1,17 +1,19 @@
+<h3 align="center">nvxraM</h3>
+
+<p align="center"><sub>curiosity runs deep.</sub></p>
+
 <p align="center">
   <picture>
-    <source media="(prefers-reduced-motion: reduce)" srcset="assets/hero-v4.png" />
-    <source type="image/webp" srcset="assets/hero-v4.webp" />
-    <img src="assets/hero-v4.gif" width="100%" alt="A continuous champagne titanium knot with a deep teal underside floats around a porcelain seed above obsidian, casting soft shadows and reflections. Nearby droplets fall out of focus." />
+    <source media="(prefers-reduced-motion: reduce)" srcset="assets/hero-v5.png" />
+    <source type="image/webp" srcset="assets/hero-v5.webp" />
+    <img src="assets/hero-v5.gif" width="100%" alt="A translucent deep-sea organism with cyan radial filaments, warm inner folds, and trailing tentacles drifts through indigo water, surrounded by softly defocused particles." />
   </picture>
 </p>
 
-<p align="center">building things. staying curious.</p>
-
 <p align="center">
   <picture>
-    <source media="(prefers-reduced-motion: reduce)" srcset="assets/field-v4.png" />
-    <source type="image/webp" srcset="assets/field-v4.webp" />
-    <img src="assets/field-v4.gif" width="100%" alt="Three curled titanium ribbons with teal and amber undersides rise from dark stone beside a porcelain bead, framed by softly defocused droplets." />
+    <source media="(prefers-reduced-motion: reduce)" srcset="assets/field-v5.png" />
+    <source type="image/webp" srcset="assets/field-v5.webp" />
+    <img src="assets/field-v5.gif" width="100%" alt="A close-up field of luminous marine filaments and suspended plankton glows in cyan, peach, and violet against deep indigo water." />
   </picture>
 </p>

@@ -11,6 +11,9 @@
 - [Version 4](https://github.com/nvxraM/nvxraM/tree/v4): a continuous champagne
   titanium knot and a macro ribbon study, with teal and amber accents over
   obsidian. Physically lit scenes share the same material palette.
+- [Version 5](https://github.com/nvxraM/nvxraM/tree/v5): PELAGIC, a deep-sea
+  observatory with a luminous jellyfish, drifting particles, and a marine
+  filament study. A centered introduction reads “curiosity runs deep.”
 
 Earlier versions remain available through Git tags; their media is not
 duplicated in the current profile. To inspect version 1 without switching the

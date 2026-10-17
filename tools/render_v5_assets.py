@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render Cycles frames, denoise with OIDN, and package the original V4 artwork."""
+"""Render Cycles frames, denoise with OIDN, and package the original V5 artwork."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ TOOLS = Path(__file__).resolve().parent
 def render_specification(scene: Path, count: int, samples: int, kind: str,
                          pose_count: int | None = None):
     pose_count = count if pose_count is None else pose_count
-    return {'generator': 'nvxram-v4',
+    return {'generator': 'nvxram-v5',
             'processing_revision': 1, 'oidn_version': OIDN_VERSION,
             'scene_sha256': hashlib.sha256(scene.read_bytes()).hexdigest(),
             'frame_count': count, 'pose_count': pose_count,
@@ -46,7 +46,7 @@ def prepare_work(work: Path, specification: dict, reuse: bool):
         # --resume would incorrectly accept as frames from the new scene.
         frames = [path for folder in [raw, clean] for path in folder.glob('frame-*.png')]
         if manifest.is_file():
-            if json.loads(manifest.read_text()).get('generator') != 'nvxram-v4':
+            if json.loads(manifest.read_text()).get('generator') != 'nvxram-v5':
                 raise SystemExit('This work directory belongs to another renderer; choose an empty one.')
         elif frames:
             raise SystemExit('Unrecognized frames in the work directory; choose an empty one.')
@@ -182,7 +182,7 @@ def main():
     parser.add_argument('--work-dir', type=Path)
     parser.add_argument('--frame-count', type=int)
     parser.add_argument('--pose-count', type=int,
-                        help='Native poses; defaults to half-cycle plus one, played with cosine easing')
+                        help='Native poses; defaults to the full native cycle; fewer poses enable cosine easing')
     parser.add_argument('--samples', type=int)
     parser.add_argument('--threads', type=int, default=4)
     parser.add_argument('--duration', type=int, default=50)
@@ -190,18 +190,18 @@ def main():
     parser.add_argument('--resume', action='store_true')
     parser.add_argument('--package-only', action='store_true')
     args = parser.parse_args()
-    count = (80 if args.kind == 'hero' else 60) if args.frame_count is None else args.frame_count
+    count = 60 if args.frame_count is None else args.frame_count
     samples = (32 if args.kind == 'hero' else 20) if args.samples is None else args.samples
-    poses = (count//2+1) if args.pose_count is None else args.pose_count
+    poses = count if args.pose_count is None else args.pose_count
     if min(count, samples, args.threads, args.duration) < 1:
         raise SystemExit('Frame count, samples, threads, and duration must be positive.')
     if not 1 <= poses <= count:
         raise SystemExit('Pose count must be between one and the output frame count.')
-    scene_path = TOOLS / ('scene_v4.py' if args.kind == 'hero' else 'scene_field_v4.py')
-    work = args.work_dir or Path('/tmp/nvxram-v4') / args.kind
+    scene_path = TOOLS / ('scene_v5.py' if args.kind == 'hero' else 'scene_field_v5.py')
+    work = args.work_dir or Path('/tmp/nvxram-v5') / args.kind
     specification = render_specification(scene_path, count, samples, args.kind, poses)
     raw, clean = prepare_work(work, specification, args.resume or args.package_only)
-    size = (1600, 800 if args.kind == 'hero' else 240)
+    size = (1600, 800 if args.kind == 'hero' else 220)
     invalid_raw = [index for index in range(poses)
                    if not complete_png(raw / f'frame-{index:04d}.png', size)]
     if args.package_only:
@@ -229,8 +229,8 @@ def main():
                 raise SystemExit(f'Rendered pose is incomplete: {source}')
             if not args.resume or not complete_png(target, size):
                 denoise_png(source, target, binary, args.threads)
-            print(f'V4_DENOISED {args.kind} {index+1}/{poses}', flush=True)
-    package(clean, args.output_dir, f'{args.kind}-v4', count, args.duration, args.colors, poses)
+            print(f'V5_DENOISED {args.kind} {index+1}/{poses}', flush=True)
+    package(clean, args.output_dir, f'{args.kind}-v5', count, args.duration, args.colors, poses)
 
 
 if __name__ == '__main__':

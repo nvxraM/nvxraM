@@ -1,9 +1,11 @@
+<h3 align="center">nvxraM</h3>
+
+<p align="center"><sub>curiosity runs deep.</sub></p>
+
 <p align="center">
-  <img src="../assets/hero-v4.png" width="100%" alt="A continuous champagne titanium knot with a deep teal underside floats around a porcelain seed above obsidian, casting soft shadows and reflections. Nearby droplets fall out of focus." />
+  <img src="../assets/hero-v5.png" width="100%" alt="A translucent deep-sea organism with cyan radial filaments, warm inner folds, and trailing tentacles drifts through indigo water, surrounded by softly defocused particles." />
 </p>
 
-<p align="center">building things. staying curious.</p>
-
 <p align="center">
-  <img src="../assets/field-v4.png" width="100%" alt="Three curled titanium ribbons with teal and amber undersides rise from dark stone beside a porcelain bead, framed by softly defocused droplets." />
+  <img src="../assets/field-v5.png" width="100%" alt="A close-up field of luminous marine filaments and suspended plankton glows in cyan, peach, and violet against deep indigo water." />
 </p>

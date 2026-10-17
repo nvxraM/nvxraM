@@ -114,7 +114,7 @@ def check_animation(path, height):
 def main():
     for path in sorted(ROOT.rglob('*.md')):
         check_markdown(path)
-    for name, height in [('hero-v4', 800), ('field-v4', 240)]:
+    for name, height in [('hero-v5', 800), ('field-v5', 220)]:
         check_media(name, height)
     if ERRORS:
         raise SystemExit('\n'.join(f'FAIL: {error}' for error in ERRORS))
