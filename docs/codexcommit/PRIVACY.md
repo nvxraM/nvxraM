@@ -1,6 +1,6 @@
 # Privacy notice
 
-Publisher: **nvxraM**. For privacy questions, contact [freematt438@gmail.com](mailto:freematt438@gmail.com).
+Publisher: **nvxraM**. For privacy questions, contact [nvxram.support@gmail.com](mailto:nvxram.support@gmail.com).
 Notice URL: [CodexCommit privacy notice](https://github.com/nvxraM/CodexCommit/blob/main/plugin/docs/PRIVACY.md).
 
 CodexCommit processes the tracked changes you include in the Commit tool window to prepare a commit-message draft. Selecting the Generate button sends the source patch and fixed task instructions through your local Codex CLI. No additional review or confirmation dialog opens. Check the selected changes before you use the button. The CLI communicates using its own authentication. This may send filenames, source code, comments, and any personal or secret information present in the patch to the service used by Codex.
