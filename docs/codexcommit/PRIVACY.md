@@ -26,4 +26,4 @@ Filename and content checks reject some obvious credentials and unsupported inpu
 
 The CLI may use account quota or incur charges under your chosen service. Provider processing and retention depend on your account, settings, and applicable terms. The plugin cannot promise that data never leaves your computer or that provider-side data is deleted by cancelling a request.
 
-Read the [verification record](VERIFICATION.md) for the tests and remaining limits of each version. This notice does not imply JetBrains Marketplace approval.
+Read the [verification record](https://github.com/nvxraM/CodexCommit/blob/main/plugin/docs/VERIFICATION.md) for the tests and remaining limits of each version. This notice does not imply JetBrains Marketplace approval.

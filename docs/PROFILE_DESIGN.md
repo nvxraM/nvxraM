@@ -1,4 +1,4 @@
-# Version 6 · PELAGIC relic
+# Version 6.1 · PELAGIC relic
 
 The profile is one integrated underwater scene. The static version is in
 [PROFILE_STATIC.md](PROFILE_STATIC.md); [VERSIONS.md](VERSIONS.md) links the
@@ -12,7 +12,10 @@ procedural, with no downloaded artwork or private biographical details.
 
 Cycles traces cast and contact shadows across the stone and seafloor. A
 directional cyan key light and restrained fill give the lettering and tissue
-depth. An 85 mm perspective camera uses optical depth of field to separate the
+depth. Version 6.1 adds a restrained cyan rim source linked only to the carved
+lettering: grazing light reveals the bevels without brightening the surrounding
+stone, seafloor, or jellyfish. The PNG, WebP, and GIF share this native lighting.
+An 85 mm perspective camera uses optical depth of field to separate the
 foreground, relic, and distant water.
 
 The panel is 1600 × 900 pixels. Full-color animated WebP preserves photographic
@@ -72,6 +75,20 @@ include the scene, font file's bytes, render settings, processing revision, and
 denoiser version. Pass `--font /path/to/font.ttf` to use a different font, and
 use that same option when resuming or repackaging. Render again without
 `--resume` after editing the scene or changing the font.
+
+## Validate renderer reuse
+
+Run the fast regression suite without Blender, FFmpeg, OIDN, or downloads:
+
+```bash
+python -m unittest discover -s tools -p 'test_*.py' -v
+```
+
+Install `tools/requirements.txt` first. The tests use temporary directories and
+small synthetic images to check that matching renders can resume, changed scene,
+font, and settings are rejected, stale frame tails are cleared on refresh, and
+unrecognized work and incomplete PNGs are preserved or rejected safely. They do
+not regenerate or modify the committed artwork.
 
 ## Publish
 

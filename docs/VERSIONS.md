@@ -18,6 +18,10 @@
   scene, with the handle in weathered stone bas-relief, surrounding marine
   filaments, and a jellyfish with uncanny inner tissue. Directional light casts
   shadows across the relic and sloped seafloor.
+- [Version 6.1](https://github.com/nvxraM/nvxraM/tree/v6.1): the same integrated
+  PELAGIC scene, with a subtle cyan rim on the carved lettering for clearer
+  edges. The animated WebP, GIF fallback, and reduced-motion PNG all use the
+  same lighting; the jellyfish and surrounding stone retain their existing light.
 
 Earlier versions remain available through Git tags; their media is not
 duplicated in the current profile. To inspect version 1 without switching the

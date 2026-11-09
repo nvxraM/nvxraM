@@ -174,6 +174,7 @@ def light(name,location,color,energy,size,target=(.8,0,1.9)):
     bpy.context.collection.objects.link(obj)
     obj.location=p(location)
     aim(obj,p(target))
+    return obj
 
 
 def backdrop(camera):
@@ -375,7 +376,7 @@ def build(args):
     hidden_organ(main[0])
     stone=stone_material()
     seafloor(stone)
-    relic,_=submerged_relic(stone,font)
+    relic,label=submerged_relic(stone,font)
     living_edges(relic)
     # A compact directional source gives the living tissue, carved bevels and
     # seabed coherent shadows. The broad fill is deliberately much weaker.
@@ -383,6 +384,12 @@ def build(args):
     light('Jelly-side cyan grazing light',(.8,-1.3,1.6),(.10,.65,.75),110,1.2,(-1.7,-.72,0))
     light('Weak broad blue water fill',(-3,-4,4.5),(.4,.62,.85),130,5)
     light('Low cyan letter-bevel rake',(-1.8,-3,.8),(.15,.70,.78),55,.75,(-1.7,-.72,0))
+    # A grazing cyan rim reveals the carved edges without washing out the stone
+    # or changing the jellyfish lighting. Link this source only to the lettering.
+    rim=light('Cyan carved-letter rim',(-3.2,-1.35,.95),(.12,.80,1),75,.55,(-1.7,-.96,0))
+    receivers=bpy.data.collections.new('Cyan rim / carved lettering only')
+    receivers.objects.link(label)
+    rim.light_linking.receiver_collection=receivers
     light('Restrained violet rear separation',(3.5,3.2,3.6),(.49,.32,1),120,3)
     light('Restrained warm internal bounce',(.8,-1.8,2.9),(1,.63,.45),35,1.8)
     bpy.ops.object.camera_add(location=p((1.4,-16.5,4.4)))
