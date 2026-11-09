@@ -22,10 +22,10 @@ This page compares the current profile with every earlier visual design recovera
 The current design retains the carved nvxraM relic, jellyfish geometry and camera. Less reflective, more transmitting tissue reveals the inner folds; subdued emission preserves the cyan identity. Mineral grain and roughness replace the smoother blue stone surface. Broader underwater lighting and a bounded region of distant scattering deepen the scene while keeping the lettering clear. Its versioned files keep the animated WebP, GIF fallback and reduced-motion PNG together.
 
 <p>
-  <img src="../assets/panel-v6.2.png" width="100%" alt="Current nvxraM PELAGIC profile: carved stone lettering on the seabed beneath a translucent jellyfish, with underwater lighting and layered depth." />
+  <img src="https://raw.githubusercontent.com/nvxraM/nvxraM/dd4ffbab1d425c7f93845cea2ec1bf69c2d15651/assets/panel-v6.2.png" width="100%" alt="Current nvxraM PELAGIC profile: carved stone lettering on the seabed beneath a translucent jellyfish, with underwater lighting and layered depth." />
 </p>
 
-[Full-size PNG](../assets/panel-v6.2.png) · [Animated WebP](../assets/panel-v6.2.webp) · [GIF fallback](../assets/panel-v6.2.gif)
+[Immutable v6.2 artwork snapshot](https://github.com/nvxraM/nvxraM/tree/dd4ffbab1d425c7f93845cea2ec1bf69c2d15651) · [Full-size PNG](https://raw.githubusercontent.com/nvxraM/nvxraM/dd4ffbab1d425c7f93845cea2ec1bf69c2d15651/assets/panel-v6.2.png) · [Animated WebP](https://raw.githubusercontent.com/nvxraM/nvxraM/dd4ffbab1d425c7f93845cea2ec1bf69c2d15651/assets/panel-v6.2.webp) · [GIF fallback](https://raw.githubusercontent.com/nvxraM/nvxraM/dd4ffbab1d425c7f93845cea2ec1bf69c2d15651/assets/panel-v6.2.gif)
 
 <a id="initial-genomics"></a>
 ## Initial genomics — untagged
