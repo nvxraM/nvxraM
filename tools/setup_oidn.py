@@ -16,7 +16,7 @@ VERSION = '2.5.1'
 ARCHIVE = f'oidn-{VERSION}.x86_64.linux.tar.gz'
 URL = f'https://github.com/RenderKit/oidn/releases/download/v{VERSION}/{ARCHIVE}'
 SHA256 = '743c3e2aff8c220d5d70fe6cb970fb3d36f2702d2693c61d1d148e404cf37cd6'
-DEFAULT_CACHE = Path('/workspace/.nvxram-tools')
+DEFAULT_CACHE = Path(__file__).resolve().parents[1] / '.local' / 'tools' / 'oidn'
 
 
 def ensure_oidn(cache_dir: Path = DEFAULT_CACHE) -> Path:
@@ -26,7 +26,7 @@ def ensure_oidn(cache_dir: Path = DEFAULT_CACHE) -> Path:
     if platform.system() != 'Linux' or platform.machine() not in {'x86_64', 'AMD64'}:
         raise SystemExit('This pinned OIDN package requires Linux x86_64.')
     cache_dir.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix='nvxram-oidn-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='nvxram-oidn-', dir=cache_dir) as temporary:
         archive_path = Path(temporary) / ARCHIVE
         digest = hashlib.sha256()
         # urllib preserves the inherited proxy and normal certificate checks.

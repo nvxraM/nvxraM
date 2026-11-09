@@ -19,6 +19,11 @@ from pathlib import Path
 import bpy
 from mathutils import Vector, noise
 
+# Blender's --python execution does not always add this file's folder to sys.path.
+if str(Path(__file__).resolve().parent) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cycles_devices import BACKENDS, configure_cycles
+
 S=.1
 TAU=math.tau
 
@@ -42,9 +47,39 @@ def mat(name,color,rough=.3,emission=0,transmission=0,coat=0):
 
 
 def gel_material(name,color,strength=1,opacity=.49):
-    material=mat(name,color,.24,.065*strength,.35,.32)
+    # A lightly scattering membrane with subdued surface reflection. Fine
+    # variation breaks the smooth molded-plastic highlight without changing
+    # the organism's silhouette or underlying geometry.
+    material=mat(name,color,.24,.009*strength,.70,.045)
     nodes,links=material.node_tree.nodes,material.node_tree.links
     bs=nodes.get('Principled BSDF')
+    bs.inputs['IOR'].default_value=1.08
+    bs.inputs['Subsurface Weight'].default_value=.035
+    bs.inputs['Subsurface Scale'].default_value=.0012
+    position=nodes.new('ShaderNodeNewGeometry')
+    tissue=nodes.new('ShaderNodeTexNoise')
+    tissue.inputs['Scale'].default_value=70
+    tissue.inputs['Detail'].default_value=3
+    micro=nodes.new('ShaderNodeTexNoise')
+    micro.inputs['Scale'].default_value=1350
+    micro.inputs['Detail'].default_value=2
+    rough=nodes.new('ShaderNodeMapRange')
+    rough.inputs['To Min'].default_value=.17
+    rough.inputs['To Max'].default_value=.31
+    tint=nodes.new('ShaderNodeValToRGB')
+    tint.color_ramp.elements[0].color=(*(v*.78 for v in color),1)
+    tint.color_ramp.elements[1].color=(*(min(v*1.12,1) for v in color),1)
+    bump=nodes.new('ShaderNodeBump')
+    bump.inputs['Strength'].default_value=.12
+    bump.inputs['Distance'].default_value=.000035
+    links.new(position.outputs['Position'],tissue.inputs['Vector'])
+    links.new(position.outputs['Position'],micro.inputs['Vector'])
+    links.new(tissue.outputs['Fac'],rough.inputs['Value'])
+    links.new(rough.outputs['Result'],bs.inputs['Roughness'])
+    links.new(tissue.outputs['Fac'],tint.inputs[0])
+    links.new(tint.outputs[0],bs.inputs['Base Color'])
+    links.new(micro.outputs['Fac'],bump.inputs['Height'])
+    links.new(bump.outputs[0],bs.inputs['Normal'])
     transparent=nodes.new('ShaderNodeBsdfTransparent')
     blend=nodes.new('ShaderNodeMixShader')
     blend.inputs[0].default_value=opacity
@@ -98,8 +133,8 @@ def organism(name,location,scale,phase_offset=0,secondary=False):
     root.rotation_euler=(.06,-.09,-.10)
     lightlevel=.22 if secondary else 1
     gel=gel_material(name+' / delicate gelatin',(.12,.32,.35),lightlevel,.37 if not secondary else .49)
-    cyan=mat(name+' / radial bioluminescent tissue',(.055,.68,.68),.28,1.5*lightlevel)
-    strand=mat(name+' / fine translucent tentacles',(.13,.45,.49),.3,.42*lightlevel,.22,.15)
+    cyan=mat(name+' / radial bioluminescent tissue',(.055,.48,.50),.34,.60*lightlevel)
+    strand=mat(name+' / fine translucent tentacles',(.13,.37,.40),.34,.14*lightlevel,.40,.035)
     peach=gel_material(name+' / peach oral tissue',(.8,.36,.24),lightlevel)
     violet=gel_material(name+' / violet inner folds',(.24,.16,.42),lightlevel)
     vertices,faces=[],[]
@@ -207,25 +242,65 @@ def backdrop(camera):
     obj.data.materials.append(mat_bg)
 
 
+def distant_water():
+    # Restrict scattering to water behind the hero and relic. Foreground
+    # lettering stays clear while distant life is seen through more water.
+    material=bpy.data.materials.new('Distant water / suspended blue-green scatter')
+    material.use_nodes=True
+    nodes,links=material.node_tree.nodes,material.node_tree.links
+    nodes.clear()
+    scatter=nodes.new('ShaderNodeVolumeScatter')
+    scatter.inputs['Color'].default_value=(.30,.52,.62,1)
+    scatter.inputs['Density'].default_value=.055
+    scatter.inputs['Anisotropy'].default_value=.25
+    absorb=nodes.new('ShaderNodeVolumeAbsorption')
+    absorb.inputs['Color'].default_value=(.20,.45,.65,1)
+    absorb.inputs['Density'].default_value=.018
+    add=nodes.new('ShaderNodeAddShader')
+    output=nodes.new('ShaderNodeOutputMaterial')
+    links.new(scatter.outputs[0],add.inputs[0])
+    links.new(absorb.outputs[0],add.inputs[1])
+    links.new(add.outputs[0],output.inputs['Volume'])
+    bpy.ops.mesh.primitive_cube_add(size=2,location=(0,1.55,.55))
+    water=bpy.context.object
+    water.name='Bounded distant seawater / clear foreground'
+    water.scale=(2,1.3,.7)
+    water.data.materials.append(material)
+
+
 def stone_material():
-    material=mat('Wet weathered submerged stone',(.027,.045,.055),.62,0,0,.12)
+    material=mat('Mineral grain / weathered submerged stone',(.06,.065,.06),.72,0,0,.025)
     nodes,links=material.node_tree.nodes,material.node_tree.links
     bs=nodes.get('Principled BSDF')
+    bs.inputs['IOR'].default_value=1.45
     geometry=nodes.new('ShaderNodeNewGeometry')
-    coarse=nodes.new('ShaderNodeTexNoise'); coarse.inputs['Scale'].default_value=78
+    coarse=nodes.new('ShaderNodeTexNoise'); coarse.inputs['Scale'].default_value=45
     coarse.inputs['Detail'].default_value=4
-    fine=nodes.new('ShaderNodeTexNoise'); fine.inputs['Scale'].default_value=800
-    fine.inputs['Detail'].default_value=3
+    fine=nodes.new('ShaderNodeTexNoise'); fine.inputs['Scale'].default_value=520
+    fine.inputs['Detail'].default_value=5
     ramp=nodes.new('ShaderNodeValToRGB')
-    ramp.color_ramp.elements[0].color=(.011,.023,.031,1)
-    ramp.color_ramp.elements[1].color=(.052,.075,.080,1)
+    ramp.color_ramp.elements[0].position=.18
+    ramp.color_ramp.elements[0].color=(.022,.028,.027,1)
+    ramp.color_ramp.elements[1].position=.82
+    ramp.color_ramp.elements[1].color=(.12,.125,.10,1)
+    rough=nodes.new('ShaderNodeMapRange')
+    rough.inputs['To Min'].default_value=.58
+    rough.inputs['To Max'].default_value=.86
+    grain=nodes.new('ShaderNodeBump')
+    grain.inputs['Strength'].default_value=.16
+    grain.inputs['Distance'].default_value=.0007
     bump=nodes.new('ShaderNodeBump')
-    bump.inputs['Strength'].default_value=.34; bump.inputs['Distance'].default_value=.00035
+    bump.inputs['Strength'].default_value=.42
+    bump.inputs['Distance'].default_value=.00062
     links.new(geometry.outputs['Position'],coarse.inputs['Vector'])
     links.new(geometry.outputs['Position'],fine.inputs['Vector'])
     links.new(coarse.outputs['Fac'],ramp.inputs[0])
     links.new(ramp.outputs[0],bs.inputs['Base Color'])
+    links.new(fine.outputs['Fac'],rough.inputs['Value'])
+    links.new(rough.outputs['Result'],bs.inputs['Roughness'])
+    links.new(coarse.outputs['Fac'],grain.inputs['Height'])
     links.new(fine.outputs['Fac'],bump.inputs['Height'])
+    links.new(grain.outputs[0],bump.inputs['Normal'])
     links.new(bump.outputs[0],bs.inputs['Normal'])
     return material
 
@@ -358,9 +433,15 @@ def build(args):
     scene.render.image_settings.file_format='PNG'; scene.render.image_settings.color_mode='RGB'
     scene.render.threads_mode='FIXED'; scene.render.threads=args.threads
     scene.render.use_persistent_data=True; scene.render.fps=20
-    scene.cycles.device='CPU'; scene.cycles.samples=args.samples
-    scene.cycles.use_denoising=False; scene.cycles.use_adaptive_sampling=True
+    configure_cycles(scene, getattr(args, 'backend', 'CPU'), getattr(args, 'device', None))
+    scene.cycles.samples=args.samples
+    scene.cycles.use_denoising=getattr(args,'denoiser','builtin')=='builtin'
+    scene.cycles.denoiser='OPENIMAGEDENOISE'
+    scene.cycles.denoising_use_gpu=False
+    scene.cycles.denoising_prefilter='ACCURATE'
+    scene.cycles.use_adaptive_sampling=True
     scene.cycles.adaptive_min_samples=min(4,args.samples); scene.cycles.adaptive_threshold=.08
+    scene.cycles.volume_bounces=1
     scene.cycles.max_bounces=6; scene.cycles.diffuse_bounces=2
     scene.cycles.glossy_bounces=3; scene.cycles.transmission_bounces=3
     scene.cycles.transparent_max_bounces=6
@@ -380,18 +461,18 @@ def build(args):
     living_edges(relic)
     # A compact directional source gives the living tissue, carved bevels and
     # seabed coherent shadows. The broad fill is deliberately much weaker.
-    light('Directional cyan water light',(3.2,-4.4,6.1),(.24,.85,1),1150,1.5,(-.4,0,.3))
-    light('Jelly-side cyan grazing light',(.8,-1.3,1.6),(.10,.65,.75),110,1.2,(-1.7,-.72,0))
-    light('Weak broad blue water fill',(-3,-4,4.5),(.4,.62,.85),130,5)
+    light('Directional cyan water light',(3.2,-4.4,6.1),(.40,.73,.86),1050,1.8,(-.4,0,.3))
+    light('Jelly-side cyan grazing light',(.8,-1.3,1.6),(.19,.58,.65),75,1.35,(-1.7,-.72,0))
+    light('Weak broad blue water fill',(-3,-4,4.5),(.42,.62,.78),100,5)
     light('Low cyan letter-bevel rake',(-1.8,-3,.8),(.15,.70,.78),55,.75,(-1.7,-.72,0))
     # A grazing cyan rim reveals the carved edges without washing out the stone
     # or changing the jellyfish lighting. Link this source only to the lettering.
-    rim=light('Cyan carved-letter rim',(-3.2,-1.35,.95),(.12,.80,1),75,.55,(-1.7,-.96,0))
+    rim=light('Cyan carved-letter rim',(-3.2,-1.35,.95),(.24,.72,.84),100,.65,(-1.7,-.96,0))
     receivers=bpy.data.collections.new('Cyan rim / carved lettering only')
     receivers.objects.link(label)
     rim.light_linking.receiver_collection=receivers
-    light('Restrained violet rear separation',(3.5,3.2,3.6),(.49,.32,1),120,3)
-    light('Restrained warm internal bounce',(.8,-1.8,2.9),(1,.63,.45),35,1.8)
+    light('Restrained violet rear separation',(3.5,3.2,3.6),(.44,.37,.68),45,3)
+    light('Restrained warm internal bounce',(.8,-1.8,2.9),(.85,.66,.48),20,1.8)
     bpy.ops.object.camera_add(location=p((1.4,-16.5,4.4)))
     camera=bpy.context.object; camera.name='Static 85 mm underwater observation camera'
     camera.data.type='PERSP'; camera.data.lens=85; camera.data.sensor_width=36
@@ -401,7 +482,8 @@ def build(args):
     bpy.context.collection.objects.link(focus); focus.location=p((.78,0,2.16))
     camera.data.dof.focus_object=focus; scene.camera=camera
     backdrop(camera)
-    dust=mat('Sparse suspended plankton',(.22,.47,.57),.5,.35)
+    distant_water()
+    dust=mat('Sparse suspended plankton',(.22,.47,.57),.5,.12)
     rng=random.Random(527)
     particles=[]
     for i in range(45):
@@ -416,10 +498,14 @@ def build(args):
 def main():
     argv=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output-dir',type=Path,default=Path('/tmp/nvxram-v6-raw'))
+    parser.add_argument('--output-dir',type=Path,
+                        default=Path(__file__).resolve().parents[1]/'.local'/'render-v6'/'raw')
     parser.add_argument('--frame-count',type=int,default=60); parser.add_argument('--frames',default='all')
     parser.add_argument('--samples',type=int,default=48); parser.add_argument('--percent',type=int,default=100)
     parser.add_argument('--threads',type=int,default=4)
+    parser.add_argument('--denoiser',choices=['builtin','external'],default='builtin')
+    parser.add_argument('--backend',choices=BACKENDS,default='CUDA')
+    parser.add_argument('--device',help='Exact GPU name or Cycles ID; omit for a single GPU')
     parser.add_argument('--font',type=Path,default=Path('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
     args=parser.parse_args(argv); args.output_dir.mkdir(parents=True,exist_ok=True)
     scene,organisms,particles=build(args)

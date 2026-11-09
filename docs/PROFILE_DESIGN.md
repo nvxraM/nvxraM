@@ -1,97 +1,136 @@
-# Version 6.1 · PELAGIC relic
+# Version 6.2 · PELAGIC realism
 
-The profile is one integrated underwater scene. The static version is in
-[PROFILE_STATIC.md](PROFILE_STATIC.md); [VERSIONS.md](VERSIONS.md) links the
-preserved designs.
+[Design history](DESIGN_HISTORY.md) compares the current scene with every
+verifiable earlier design. [PROFILE_STATIC.md](PROFILE_STATIC.md) shows the
+reduced-motion still; [VERSIONS.md](VERSIONS.md) indexes the preserved versions.
 
-The handle appears as weathered stone bas-relief on a partly buried relic, framed
-by marine filaments. A translucent jellyfish reveals a dark ring of folded
-inner tissue above the sloping seafloor. Foreground fronds, suspended particles,
-and distant marine life share the same composition. Geometry and materials are
-procedural, with no downloaded artwork or private biographical details.
+The profile keeps one integrated underwater composition: nvxraM is physical
+bas-relief on a partly buried stone relic, with a translucent jellyfish,
+folded inner tissue, trailing tentacles, distant marine life and suspended
+particles. The camera, carved lettering and existing organism geometry are
+retained. Materials, lights and a bounded region of distant water change the
+appearance without replacing that identity.
 
-Cycles traces cast and contact shadows across the stone and seafloor. A
-directional cyan key light and restrained fill give the lettering and tissue
-depth. Version 6.1 adds a restrained cyan rim source linked only to the carved
-lettering: grazing light reveals the bevels without brightening the surrounding
-stone, seafloor, or jellyfish. The PNG, WebP, and GIF share this native lighting.
-An 85 mm perspective camera uses optical depth of field to separate the
-foreground, relic, and distant water.
+The bell uses restrained coat and emission, higher transmission, subtle
+subsurface scattering, fine normal variation and linked surface roughness.
+Its inner tissue is visible through the membrane. Canals and tentacles retain
+the cyan character with less self-lighting. The stone and lettering share
+world-space mineral color and layered surface relief, variable roughness and
+a low coat weight. Their contact shadows and bevels remain actual geometry.
 
-The panel is 1600 × 900 pixels. Full-color animated WebP preserves photographic
-gradients, with a GIF fallback for compatibility. Both play without scripts or
-external services. A PNG poster serves browsers requesting reduced motion and
-the separate static page. The image has descriptive alt text and an indigo
-canvas that also works against GitHub's light theme.
+A broader, less saturated cyan key and weaker violet/warm fills give surfaces
+more natural variation. The lettering-only rim preserves readability.
+Scattering and absorption are confined to water behind the foreground, so
+the distant organism recedes while the handle stays clear. The static 85 mm
+camera retains optical depth of field. Geometry and materials are procedural;
+no downloaded artwork, textures or private biographical details are used.
+
+## Media
+
+The versioned outputs are `assets/panel-v6.2.png`, `.webp` and `.gif`, all
+1600 × 900. The PNG is the first rendered pose. Animated WebP preserves
+full-color gradients; the GIF is a compatible fallback. The root README pins
+all three paths to the same immutable asset commit and visibly links the
+history page. Browsers requesting reduced motion receive the PNG.
+
+The loop uses 60 native poses at 50 milliseconds per pose, for three seconds.
+No estimated frames, optical-flow interpolation or frame blending is used.
+WebP is encoded at quality 90; GIF uses a shared 96-color palette and ordered
+Bayer dithering. The previous `panel-v6` files remain preserved alongside the
+new version, and older designs are linked through immutable Git commits.
 
 ## Regenerate
 
-The committed images are ready to use. Regeneration is optional and requires
-Blender 4.3.2, FFmpeg, Python 3.12+, Pillow, NumPy, and DejaVu Sans from the
-`fonts-dejavu-core` package at
-`/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf`. CPU path tracing can take tens
-of minutes. Opening the profile needs no renderer or running service.
+Install Blender 5.2.3 LTS, FFmpeg and Python 3.12+, then install the pinned
+`tools/requirements.txt` in a project virtual environment. DejaVu Sans must be
+available at `/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf`, or passed with
+`--font`. Ensure the Blender and FFmpeg executables are on the command PATH.
+The Ubuntu checkout already has the software and `.venv`; its local environment
+can be loaded with `source .local/environment.sh`.
 
-Use the existing checkout; no Git worktree is needed. From its root:
-
-```bash
-python -m venv /tmp/nvxram-art-venv
-/tmp/nvxram-art-venv/bin/python -m pip install -r tools/requirements.txt
-/tmp/nvxram-art-venv/bin/python tools/setup_oidn.py
-/tmp/nvxram-art-venv/bin/python tools/render_v6_assets.py --output-dir assets
-/tmp/nvxram-art-venv/bin/python tools/check_profile.py
-```
-
-The installer downloads Open Image Denoise 2.5.1 from the official RenderKit
-GitHub release and verifies its pinned SHA-256 before extraction. The Linux
-x86_64 CPU tool is cached outside the checkout under `/workspace/.nvxram-tools`.
-The renderer also installs it when missing. It preserves normal HTTPS
-certificate checks and uses no credentials or external render service.
-
-`tools/scene_v6.py` defines the scene. The wrapper stores raw frames, denoised
-frames, and render fingerprints under `/tmp/nvxram-v6`. Open Image Denoise
-cleans the rendered display RGB through its supported LDR/sRGB route. Pillow
-packages full-color WebP animations at quality 90; FFmpeg packages the GIF
-fallback with a shared 96-color palette and ordered Bayer dithering at scale 5
-to stay below 10 MB. Final assets use the name `panel-v6`.
-
-The loop renders a complete cycle of 60 native poses, played at 50 milliseconds
-per frame for 3 seconds, with up to 48 samples per pixel. Each output frame is a
-native rendered pose, with no optical-flow interpolation or frame blending.
-Setting `--pose-count` below `--frame-count` optionally plays a cosine-timed
-back-and-forth sequence. Encoders may merge repeated holds while retaining the
-full duration.
-
-If the complete frames from the current scene are already present, repackage
-them without rerendering:
+From the checkout root:
 
 ```bash
-/tmp/nvxram-art-venv/bin/python tools/render_v6_assets.py --package-only
+.venv/bin/python tools/render_v6_assets.py --stem panel-v6.2 --samples 96 --frame-count 60 --threads 4 --backend CUDA --device "NVIDIA GeForce RTX 4090" --denoiser builtin --debug-cycles
+.venv/bin/python tools/check_profile.py --report .local/media-validation.json
 ```
 
-Use `--resume` to continue an interrupted render with the same scene and
-settings. The wrapper checks that saved PNGs are complete; its fingerprints
-include the scene, font file's bytes, render settings, processing revision, and
-denoiser version. Pass `--font /path/to/font.ttf` to use a different font, and
-use that same option when resuming or repackaging. Render again without
-`--resume` after editing the scene or changing the font.
+Blender's bundled Open Image Denoise 2.5.0 denoises the linear render with
+surface guides on the CPU before each PNG is saved. CUDA performs path tracing;
+four CPU support threads handle scene preparation and denoising. This route
+needs no separate denoiser download or second denoising pass. The optional
+`--denoiser external` route retains the pinned OIDN 2.5.1 CPU tool and its
+SHA-256 verification for users who deliberately choose it.
 
-## Validate renderer reuse
+Raw output, packaging input, temporary files and resume fingerprints default
+to `.local/render-v6.2`; optional external tools are cached in `.local/tools`.
+Final assets default to this checkout's `assets` directory independently of
+the caller's directory. `--work-dir`, `--output-dir` and `--stem` allow explicit
+alternatives. Use a new visual tag and versioned asset stem for each published
+visual change.
 
-Run the fast regression suite without Blender, FFmpeg, OIDN, or downloads:
+### Devices and safe reuse
+
+`--backend CUDA` is the default. `--device` accepts an exact GPU name or Cycles
+ID; otherwise exactly one GPU must be available. The selector enables that
+GPU and prints `CYCLES_DEVICE_SELECTION`. Device preflight runs before existing
+frames can be cleared or optional tools downloaded. `--backend CPU` without
+`--device` selects the explicit CPU fallback. There is no automatic fallback.
+`--backend OPTIX` remains available for environments with a supported runtime;
+this work uses CUDA and makes no driver or system-library changes.
+
+`--resume` verifies the scene, font bytes, sample settings, device selector,
+requested backend, resolved GPU ID and denoiser before reusing complete PNGs.
+Changing these inputs rejects reuse without deleting saved frames. Do not
+substitute new fingerprints into older render manifests to force reuse.
+`--package-only` verifies saved fingerprints and complete denoised inputs,
+then repackages without requiring a GPU or downloading tools. Pass the same
+sample, frame-count, backend, device and denoiser options as the original run.
+
+## Measured representative frame
+
+Two full-resolution first-pose renders of the selected scene were measured
+on an RTX 4090 through CUDA, using Blender 5.2.3, adaptive sampling, built-in
+CPU OIDN and four CPU support threads. Whole-process wall times, including
+startup and scene preparation, were **8.164 seconds at 48 samples** and
+**8.353 seconds at 96 samples**. The 96-sample ceiling was selected because
+this measured cost remained close while allowing extra sampling where needed.
+The images look similar at profile scale; no general performance gain or
+CPU-versus-GPU speedup is claimed from these measurements.
+
+## Completed animation run
+
+The full run completed 60 native CUDA poses and packaging in **393.544 seconds**
+(6 minutes 34 seconds), including startup, CPU denoising and encoding. Every
+pose logged RTX 4090 CUDA path tracing. Three successful representative-frame
+renders preceded this run; none of those measurements compares CPU and GPU
+performance. A built-scene comparison preserved all 200 existing non-light
+objects, camera settings and transforms; only the bounded distant-water
+object was added.
+
+The PNG is 1,161,060 bytes. The GIF is 7,785,269 bytes and WebP is 3,262,618
+bytes; both encoded animations contain 60 frames over 3,000 milliseconds.
+Poster and cross-format checks pass. Loop-seam mean absolute RGB error on
+128 × 72 thumbnails is 0.000919 for GIF and 0.001360 for WebP, comparable to
+adjacent-frame motion. These are measured checks, not a guarantee of
+scientific physical accuracy or universal browser rendering.
+
+## Validation
 
 ```bash
-python -m unittest discover -s tools -p 'test_*.py' -v
+.venv/bin/python -m unittest discover -s tools -p 'test_*.py' -v
+.venv/bin/python tools/check_profile.py --report .local/media-validation.json
 ```
 
-Install `tools/requirements.txt` first. The tests use temporary directories and
-small synthetic images to check that matching renders can resume, changed scene,
-font, and settings are rejected, stale frame tails are cleared on refresh, and
-unrecognized work and incomplete PNGs are preserved or rejected safely. They do
-not regenerate or modify the committed artwork.
+Regression checks cover strict device selection, frame preservation, resume
+fingerprints, output naming, denoiser choice, immutable README media paths and
+visible history navigation. Media validation checks dimensions, actual encoded
+frame counts, duration, looping, poster agreement, GIF/WebP playback agreement
+and the loop seam relative to adjacent-frame motion. Numeric checks accompany
+visual inspection of the full-size poster, lettering, bell and representative
+animation poses; they do not prove scientific realism.
 
-## Publish
-
-Commit and push the files to the default branch of the public profile repository
-`nvxraM/nvxraM`. The root `README.md` appears on the profile. GitHub may cache
-updated image files briefly. Rendering scripts do not publish anything.
+The history records eight earlier published designs with 16 still panels.
+Every historical preview is pinned to its full commit hash and was verified
+against the corresponding Git object. Initial untagged work and missing
+unpublished experiments are identified explicitly rather than invented.
