@@ -45,6 +45,8 @@ class ProfileHTML(HTMLParser):
         self.visible_text = []
         self.visible_links = []
         self._anchor = None
+        self.pictures = []
+        self._picture = None
 
     def handle_data(self, data):
         if data.strip():
@@ -53,12 +55,19 @@ class ProfileHTML(HTMLParser):
                 self._anchor[1].append(data.strip())
 
     def handle_endtag(self, tag):
+        if tag == 'picture':
+            self._picture = None
         if tag == 'a' and self._anchor is not None:
             self.visible_links.append((self._anchor[0], ' '.join(self._anchor[1])))
             self._anchor = None
 
     def handle_starttag(self, tag, attrs):
         values = dict(attrs)
+        if tag == 'picture':
+            self._picture = []
+            self.pictures.append(self._picture)
+        if tag in {'source', 'img'} and self._picture is not None:
+            self._picture.append((tag, values))
         if tag == 'a':
             self._anchor = (values.get('href', ''), [])
         require(tag not in {'script', 'style', 'iframe', 'video'},
@@ -102,6 +111,15 @@ def check_markdown(path):
                     name == f'../assets/{CURRENT_STEM}.png' for name in parser.images),
                 'Static profile must show the current reduced-motion PNG')
     if path.name == 'README.md':
+        # Browsers select the first matching source. A WebP source before the
+        # reduced-motion still would animate even when reduced motion is set.
+        picture = parser.pictures[0] if len(parser.pictures) == 1 else []
+        require([tag for tag, _values in picture] == ['source', 'source', 'img'] and
+                picture[0][1].get('media') == '(prefers-reduced-motion: reduce)' and
+                picture[0][1].get('type') in {None, 'image/png'} and
+                picture[1][1].get('type') == 'image/webp' and
+                not picture[1][1].get('media'),
+                'README needs one picture ordered as reduced-motion PNG, WebP, GIF fallback')
         require(len(parser.images) == 1, 'Profile must contain one integrated panel')
         require(len(parser.still_sources) == 1 and
                 all(name.endswith('.png') for name in parser.still_sources),

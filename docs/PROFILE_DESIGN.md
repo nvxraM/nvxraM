@@ -124,7 +124,10 @@ scientific physical accuracy or universal browser rendering.
 
 Regression checks cover strict device selection, frame preservation, resume
 fingerprints, output naming, denoiser choice, immutable README media paths and
-visible history navigation. Media validation checks dimensions, actual encoded
+visible history navigation.
+README picture grouping and source order are checked so the reduced-motion PNG
+is selected before animated WebP, with GIF as the final fallback.
+Media validation checks dimensions, actual encoded
 frame counts, duration, looping, poster agreement, GIF/WebP playback agreement
 and the loop seam relative to adjacent-frame motion. Numeric checks accompany
 visual inspection of the full-size poster, lettering, bell and representative

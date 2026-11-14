@@ -51,6 +51,34 @@ class ProfileValidationTests(unittest.TestCase):
     def test_current_pinned_formats_allow_visible_history_navigation(self):
         self.assertEqual(self.check_page(self.readme()), [])
 
+    def test_webp_before_reduced_motion_source_is_rejected(self):
+        source = self.readme()
+        start = source.index('<source')
+        end = source.index('<img')
+        sources = source[start:end].split('/>')
+        swapped = source[:start] + sources[1] + '/>' + sources[0] + '/>' + source[end:]
+        self.assertTrue(any('picture ordered' in error for error in self.check_page(swapped)))
+
+    def test_sources_outside_picture_are_rejected(self):
+        source = self.readme().replace('<picture>', '').replace('</picture>', '')
+        self.assertTrue(any('picture ordered' in error for error in self.check_page(source)))
+
+    def test_sources_in_separate_pictures_are_rejected(self):
+        source = self.readme().replace('<img', '</picture><picture><img')
+        self.assertTrue(any('picture ordered' in error for error in self.check_page(source)))
+
+    def test_extra_preceding_source_is_rejected(self):
+        source = self.readme().replace('<picture>', '<picture><source srcset="animation.gif" />')
+        self.assertTrue(any('picture ordered' in error for error in self.check_page(source)))
+
+    def test_reduced_motion_source_with_incompatible_type_is_rejected(self):
+        source = self.readme().replace('<source media=', '<source type="image/webp" media=')
+        self.assertTrue(any('picture ordered' in error for error in self.check_page(source)))
+
+    def test_explicit_png_type_on_reduced_motion_source_is_allowed(self):
+        source = self.readme().replace('<source media=', '<source type="image/png" media=')
+        self.assertEqual(self.check_page(source), [])
+
     def test_mutable_main_and_tag_media_refs_are_rejected(self):
         for ref in ['main', 'v6.2']:
             with self.subTest(ref=ref):
